@@ -1,1 +1,7 @@
 lmdeploy
+transformers
+gradio==3.43.0
+streamlit
+torch
+numpy
+scikit-learn
