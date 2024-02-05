@@ -5,17 +5,17 @@
 &emsp;&emsp;本库是参加InternLM官方举办的大模型实战训练营大作业，目的是亲自实现对大模型的微调，感谢上海人工智能实验室、OpenXLab提供此次机会。领域微调需要有效数据，正好在Kaggle发现了刚结束的DAIGT竞赛[LLM - Detect AI Generated Text | Kaggle](https://www.kaggle.com/competitions/llm-detect-ai-generated-text/overview)，该竞赛提供了学生和LLM生成的作文文本，要求参赛队伍设计有效算法实现对LLM生成作文文本的准确识别。此竞赛数据集很适合用于LLM微调，并且判断文本是否由LLM生成也是一个有趣的方向，并且该竞赛最终Private榜单第一名[LLM - Detect AI Generated Text | Kaggle](https://www.kaggle.com/competitions/llm-detect-ai-generated-text/discussion/470121)性能最好的方案就是使用Mistral-7B-v0.1模型进行LoRA微调，遂确定将大作业为定为“通过微调InterLM实现LLM生成文本检测”。竞赛的discussion有很多选手分享了经验和tricks，但由于时间原因，本此尝试应该会比较粗糙，感兴趣的朋友可以进一步研究。
 
 训练后的模型性能表现如下，有兴趣的朋友可以在OpenXLab下载模型尝试
-![Untitled](images\performance.png)
+![Untitled](images/performance.png)
 
 ##  数据集
 DAIGT竞赛组织方提供的数据较少，只提供了1378条由学生撰写的作文文本，没有提供LLM生成的作文文本，LLM生成的作文文本应该需要参赛选手自行生成，在此感谢[Darek Kłeczek | Grandmaster | Kaggle](https://www.kaggle.com/thedrcat)为此竞赛提供了完整的训练数据，方便构建微调InterLM所需的数据。
 
-初步使用[Darek Kłeczek | Grandmaster | Kaggle](https://www.kaggle.com/thedrcat)提供的[daigt-v3-train-dataset (kaggle.com)](https://www.kaggle.com/datasets/thedrcat/daigt-v3-train-dataset)和[DAIGT-V4-TRAIN-DATASET (kaggle.com)](https://www.kaggle.com/datasets/thedrcat/daigt-v4-train-dataset)两个数据集共四个csv文件中的数据构建InterLM微调使用对话数据，经过数据清理后，共构建了140311条conversation数据。因为训练方向是使InterLM能预测一段文本是否有LLMs生成，数据构建数据参考[construct_conversions.ipynb](data\construct_conversions.ipynb)
+初步使用[Darek Kłeczek | Grandmaster | Kaggle](https://www.kaggle.com/thedrcat)提供的[daigt-v3-train-dataset (kaggle.com)](https://www.kaggle.com/datasets/thedrcat/daigt-v3-train-dataset)和[DAIGT-V4-TRAIN-DATASET (kaggle.com)](https://www.kaggle.com/datasets/thedrcat/daigt-v4-train-dataset)两个数据集共四个csv文件中的数据构建InterLM微调使用对话数据，经过数据清理后，共构建了140311条conversation数据。因为训练方向是使InterLM能预测一段文本是否有LLMs生成，数据构建数据参考[construct_conversions.ipynb](data/construct_conversions.ipynb)
 
 
 构建后的数据如下所示：
 
-![Untitled](images\conversations_data.png)
+![Untitled](images/conversations_data.png)
 
 
 
@@ -24,18 +24,18 @@ DAIGT竞赛组织方提供的数据较少，只提供了1378条由学生撰写�
 
 初次尝试时，因为资源有限，且由于构建的数据中基本都包含较长的作文文本，在20g显存下，全量的140311条数据训练时间接近7天，如下图所示。
 
-![Untitled](images\log1.png)
+![Untitled](images/log1.png)
 
 为了完成初次验证，先选择随机从140311条数据随机筛选出10%的数据，即14031条数据进行微调，在[internlm_chat_7b_qlora_oasst1_e3_copy.py](./train/internlm_chat_7b_qlora_oasst1_e3_copy.py)中设置max_length=3072、max_epochs=3、batch_size=2、accumulative_counts=16，共需时间为17小时左右
 
-![Untitled](images\log2.png)
+![Untitled](images/log2.png)
 
 因为使用的数据集只是构建完整数据集的十分之一，故此微调模型名称中以**small**标识。
 
 后通过统计发现，数据集中单个conversation数据的tokens较少超过1024，遂使用全量数据，在40g显存下，设置参数max_length=1024、max_epochs=1、batch_size=24、accumulative_counts=4，约训练了39小时；因使用完整数据，故此微调模型名称中以**large**标识。
 
 ## 性能
-构建了两个测试数据，分别是[conversations_v1_140_test.json](jsondata\conversations_v1_140_test.json)和[test_1000_1000.csv](data\test_1000_1000.csv)，模型对文本的DAIGT性能具体如下所示：
+构建了两个测试数据，分别是[conversations_v1_140_test.json](jsondata/conversations_v1_140_test.json)和[test_1000_1000.csv](data/test_1000_1000.csv)，模型对文本的DAIGT性能具体如下所示：
 
 conversations_v1_140_test.json数据：
 
@@ -51,7 +51,7 @@ conversations_v1_140_test.json数据：
 ### `KV Cache`量化评测
 第一步计算minmax时，可能因为是datasets版本变动原因，使用c4数据集一直报错，
 
-![Untitled](images\error1.png)
+![Untitled](images/error1.png)
 
 网络建议将其换成wikitext2数据集，运行命令如下：
 
